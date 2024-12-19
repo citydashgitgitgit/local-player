@@ -127,7 +127,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 			res.send({
 				adObject: response.data.adObject,
-				playlist: checkCurrentPlaylist(response.data),
+				// playlist: checkCurrentPlaylist(response.data),
+				playlist: [],
 			});
 		} catch (error) {
 			console.log(error.message);
