@@ -108,6 +108,9 @@ function checkCurrentPlaylist({ playlist }) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+	console.log("SERVER_URL", process.env.NEXT_PUBLIC_SERVER_URL);
+	console.log("OBJECT ID", process.env.NEXT_PUBLIC_AD_OBJECT_UUID);
+
 	if (req.method === 'GET') {
 		try {
 			const response = await axios.post(
