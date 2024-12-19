@@ -120,6 +120,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 			);
 
+			console.log("response", response);
+
 			res.send({
 				adObject: response.data.adObject,
 				playlist: checkCurrentPlaylist(response.data),
