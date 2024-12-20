@@ -3,11 +3,12 @@ import axios from "axios";
 import fs from "fs";
 import AWS from "aws-sdk";
 import path from "path";
+import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
 
 const playerContentFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER || "./player_content";
 
 function downloadContent(fileName: string) {
-	console.log(`File ${fileName} is downloading locally...`);
+	writeLog(MESSAGE_TYPES.INFO, `File ${fileName} is downloading locally...`);
 	try {
 		const spacesEndpoint = process.env.NEXT_PUBLIC_SPACE_ENDPOINT;
 		const s3 = new AWS.S3({
@@ -61,10 +62,10 @@ function removeUnnecessaryFiles(necessaryFiles: { userUuid: string, fileName: st
 
 	for (const fileName of fileNames) {
 		if (!necessaryFileNames.includes(fileName)){
-			console.log(`File ${fileName} is not necessary anymore, deleting...`);
+			writeLog(MESSAGE_TYPES.INFO, `File ${fileName} is not necessary anymore, deleting...`);
 			fs.unlink(fileName, (err) => {
 				if (err) {
-					console.log("Error deleting file", fileName);
+					writeLog(MESSAGE_TYPES.ERROR, "Error deleting file " + fileName);
 				}
 			});
 		}
@@ -73,12 +74,7 @@ function removeUnnecessaryFiles(necessaryFiles: { userUuid: string, fileName: st
 
 function downloadNecessaryFiles(necessaryFileNames: { userUuid: string, fileName: string }[]) {
 	for (const file of necessaryFileNames) {
-		console.log(`ckecking ${playerContentFolder}/${file.userUuid}${file.fileName}`);
 		fs.stat(`${playerContentFolder}/${file.userUuid}${file.fileName}`, (err, stats) => {
-			if (err == null) {
-				console.log(`File ${playerContentFolder}/${file.userUuid}${file.fileName} already exists, wont download`);
-			}
-
 			if (err?.code === "ENOENT") {
 				downloadContent(`${file.userUuid}${file.fileName}`);
 			}
@@ -108,9 +104,6 @@ function checkCurrentPlaylist({ playlist }) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-	console.log("SERVER_URL", process.env.NEXT_PUBLIC_SERVER_URL);
-	console.log("OBJECT ID", process.env.NEXT_PUBLIC_AD_OBJECT_UUID);
-
 	if (req.method === 'GET') {
 		try {
 			const response = await axios.post(
@@ -123,14 +116,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 			);
 
-			console.log("response", response);
-
 			res.send({
 				adObject: response.data.adObject,
 				playlist: checkCurrentPlaylist(response.data),
 			});
 		} catch (error) {
-			console.log(error.message);
+			writeLog(MESSAGE_TYPES.ERROR, error.message);
 			res.status(500).json({ error: 'Что-то пошло не так', details: error.message });
 		}
 	} else {

@@ -12,7 +12,6 @@ export function onVideoEnd(
 			setCurrentIndex(prev => {
 				const newIndex = prev + 1;
 				setCurrentVideoSrc(`${playlistArray[newIndex]}?t=${new Date().getTime()}`);
-				console.log('new src', playlistArray[newIndex]);
 				return newIndex;
 			});
 		} else {
@@ -22,8 +21,6 @@ export function onVideoEnd(
 	} else {
 		console.error("Playlist is empty, cannot proceed");
 	}
-
-	console.log('current', currentIndex);
 }
 
 export const isLocalPlaylistHasDifference = (
@@ -42,6 +39,5 @@ export const isLocalPlaylistHasDifference = (
 		}
 	}
 
-	console.log("no difference was detected...");
 	return false;
 }
