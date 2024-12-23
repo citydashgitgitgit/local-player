@@ -7,7 +7,7 @@ import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
 
 const playerContentFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER || "./player_content";
 
-function downloadContent(fileName: string) {
+async function downloadContent(fileName: string) {
 	writeLog(MESSAGE_TYPES.INFO, `File ${fileName} is downloading locally...`);
 	try {
 		const spacesEndpoint = process.env.NEXT_PUBLIC_SPACE_ENDPOINT;
@@ -28,15 +28,20 @@ function downloadContent(fileName: string) {
 			fs.mkdirSync(folderForFile);
 		}
 
-		const fileStream = fs.createWriteStream(savePath);
+		return new Promise((resolve, reject) => {
+			const fileStream = fs.createWriteStream(savePath);
 
-		//@ts-ignore
-		s3.getObject(params)
-			.createReadStream()
-			.pipe(fileStream)
-			.on('error', (err) => {
-				throw Error(err.message);
-			});
+			//@ts-ignore
+			s3.getObject(params)
+				.createReadStream()
+				.pipe(fileStream)
+				.on('error', (err) => {
+					reject(new Error(`Error downloading file: ${err.message}`));
+				})
+				.on('close', () => {
+					resolve(true);
+				})
+		})
 	} catch(error) {
 		// @ts-ignore
 		throw Error(error.message);
@@ -72,17 +77,21 @@ function removeUnnecessaryFiles(necessaryFiles: { userUuid: string, fileName: st
 	}
 }
 
-function downloadNecessaryFiles(necessaryFileNames: { userUuid: string, fileName: string }[]) {
-	for (const file of necessaryFileNames) {
+async function downloadNecessaryFiles(necessaryFileNames: { userUuid: string, fileName: string }[]) {
+	const asyncDownloads = [];
+
+	necessaryFileNames.forEach(file => {
 		fs.stat(`${playerContentFolder}/${file.userUuid}${file.fileName}`, (err, stats) => {
 			if (err?.code === "ENOENT") {
-				downloadContent(`${file.userUuid}${file.fileName}`);
+				asyncDownloads.push(downloadContent(`${file.userUuid}${file.fileName}`));
 			}
 		})
-	}
+	})
+
+	return await Promise.all(asyncDownloads);
 }
 
-function checkCurrentPlaylist({ playlist }) {
+async function checkCurrentPlaylist({ playlist }) {
 	const playlistContentFiles = [];
 	for (const item of playlist) {
 		const fileUrl = item.url;
@@ -93,8 +102,9 @@ function checkCurrentPlaylist({ playlist }) {
 		});
 	}
 
+	await downloadNecessaryFiles(playlistContentFiles);
 	removeUnnecessaryFiles(playlistContentFiles);
-	downloadNecessaryFiles(playlistContentFiles);
+
 
 	let baseFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	//@ts-ignore
@@ -112,13 +122,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				{
 					headers: {
 						"Content-Type": "application/json",
+						"Range": "bytes=0-500000"
 					}
 				}
 			);
 
+			const playlist = await checkCurrentPlaylist(response.data);
+
 			res.send({
 				adObject: response.data.adObject,
-				playlist: checkCurrentPlaylist(response.data),
+				playlist: playlist,
 			});
 		} catch (error) {
 			writeLog(MESSAGE_TYPES.ERROR, error.message);

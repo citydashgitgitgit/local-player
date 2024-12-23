@@ -6,17 +6,22 @@ export function onVideoEnd(
 	setCurrentIndex: React.Dispatch<React.SetStateAction<number>>,
 	setCurrentVideoSrc: React.Dispatch<React.SetStateAction<string>>
 ) {
+	console.log("playlist array", playlistArray);
 	if (playlistArray?.length > 0) {
 		const maxIndex = playlistArray.length - 1;
 		if (currentIndex < maxIndex) {
 			setCurrentIndex(prev => {
 				const newIndex = prev + 1;
+				console.log("newIndex", newIndex);
 				setCurrentVideoSrc(`${playlistArray[newIndex]}?t=${new Date().getTime()}`);
+				console.log("video src", `${playlistArray[newIndex]}?t=${new Date().getTime()}`);
 				return newIndex;
 			});
 		} else {
+			console.log("setting index to 0");
+			console.log("setting src to", `${playlistArray[0]}?t=${new Date().getTime()}`);
 			setCurrentIndex(0);
-			setCurrentVideoSrc(playlistArray[0]);
+			setCurrentVideoSrc(`${playlistArray[0]}?t=${new Date().getTime()}`);
 		}
 	} else {
 		console.error("Playlist is empty, cannot proceed");

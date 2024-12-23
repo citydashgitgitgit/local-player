@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import axios from "axios";
 import {isLocalPlaylistHasDifference, onVideoEnd} from "@/scripts/player";
 import {get, set} from "@/localStorage";
@@ -10,11 +10,18 @@ export default function Home() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0);
   const [currentVideoSrc, setCurrentVideoSrc] = useState<string>("");
 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState(null);  // To track error state
+  const videoRef = useRef(null);
+
+  const handleError = (e) => {
+    localStorage.setItem("playlist", JSON.stringify([]));
+  };
+
   async function fetchDataFromServer()  {
     try {
-      const response = await axios.get("/api/getDrumContent");
+      const response = await axios.get("/api/getDrumContent", { headers: { "Range": "bytes=0-500000" } });
       const { playlist, adObject } = response.data;
-      setAdObject(adObject);
       return { playlist, adObject };
     } catch (error) {
       throw new Error("Error while fetching data from server");
@@ -30,11 +37,13 @@ export default function Home() {
       try {
         const { playlist: playlistFromServer, adObject: adObjectFromServer } = await fetchDataFromServer();
         const localPlaylist = getPlaylistFromLocalStorage();
+        console.log("playlist from server", playlistFromServer);
         if (isLocalPlaylistHasDifference(localPlaylist, playlistFromServer)) {
           set("playlist", playlistFromServer);
           set("adObject", adObjectFromServer);
           setPlaylistArray(playlistFromServer);
-          setCurrentVideoSrc(playlistFromServer[0]);
+          console.log("SETTING URL:", `${playlistFromServer[0]}?t=${new Date().getTime()}`);
+          setCurrentVideoSrc(`${playlistFromServer[0]}?t=${new Date().getTime()}`);
           setCurrentVideoIndex(0);
         }
       } catch(e) {
@@ -73,6 +82,17 @@ export default function Home() {
     init();
   }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      video.addEventListener('error', handleError);
+
+      return () => {
+        video.removeEventListener('error', handleError);
+      };
+    }
+  }, []);
+
   return (
     <div>
       {playlistArray.length > 0 && adObject ? (
@@ -82,14 +102,16 @@ export default function Home() {
           </span>
 
           <video
-            src={currentVideoSrc}
+            ref={videoRef}
+            src={`/api/videos?path=${currentVideoSrc.replace("/", "")}`}
             autoPlay
             muted
+            onError={handleError}
             style={{
               width: `${adObject?.specs.screen.width}px`,
               height: `${adObject?.specs.screen.height}px`,
             }}
-            // loop={true}
+            loop={playlistArray.length === 1}
             onEnded={() => {
               onVideoEnd(
                 playlistArray,
