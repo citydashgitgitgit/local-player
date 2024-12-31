@@ -83,7 +83,11 @@ export default function Home() {
             const { playlist: playlistFromServer, adObject: adObjectFromServer } = await fetchDataFromServer();
             playlist = playlistFromServer;
             adObject = adObjectFromServer;
+            console.log("Вытянули данные из сервера короче");
           }
+
+          console.log("playlist", playlist);
+          console.log("adObject", adObject);
 
           setPlaylistArray(playlist || []);
           setCurrentVideoSrc(playlist[0]);
@@ -124,8 +128,8 @@ export default function Home() {
             muted
             onError={handleError}
             style={{
-              width: `${adObject?.specs.screen.width}px`,
-              height: `${adObject?.specs.screen.height}px`,
+              width: `${adObject?.specs?.screen?.width}px`,
+              height: `${adObject?.specs?.screen?.height}px`,
             }}
             loop={playlistArray.length === 1}
             onEnded={() => {

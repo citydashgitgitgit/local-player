@@ -27,8 +27,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 		const start = parseInt(parts[0], 10);
 		const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
 
-		console.log(videoPath, fileSize);
-
 		if (start >= fileSize) {
 			res.writeHead(416, {
 				'Content-Range': `bytes */${fileSize}`,

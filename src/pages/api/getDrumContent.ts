@@ -115,6 +115,8 @@ async function checkCurrentPlaylist({ playlist }) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 	if (req.method === 'GET') {
+		let playlist;
+		let adObject;
 		try {
 			const response = await axios.post(
 				process.env.NEXT_PUBLIC_SERVER_URL + "/get-drum-playlist-by-ad-object-uuid/" + process.env.NEXT_PUBLIC_AD_OBJECT_UUID,
@@ -127,15 +129,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 			);
 
-			const playlist = await checkCurrentPlaylist(response.data);
+			console.log("received data from citydash server. Sending to player.");
+			playlist = await checkCurrentPlaylist(response.data);
+			adObject = response.data.adObject;
+			fs.writeFileSync("playlist.json", JSON.stringify(playlist));
+			fs.writeFileSync("adObject.json", JSON.stringify(response.data.adObject));
 
-			res.send({
-				adObject: response.data.adObject,
-				playlist: playlist,
-			});
+			res.send({ adObject, playlist });
 		} catch (error) {
-			writeLog(MESSAGE_TYPES.ERROR, error.message);
-			res.status(500).json({ error: 'Что-то пошло не так', details: error.message });
+			console.log("couldn't receive data from citydash server. Trying to read from local files");
+			playlist = JSON.parse(fs.readFileSync("playlist.json", "utf8") || "[]");
+			adObject = JSON.parse(fs.readFileSync("adObject.json", "utf8") || "{}");
+
+			res.send({ adObject, playlist });
 		}
 	} else {
 		res.status(405).json({ error: 'Метод не разрешён' });

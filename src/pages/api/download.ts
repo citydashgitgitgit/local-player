@@ -15,7 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	if (req.method === 'POST') {
 		try {
 			const { fileName } = req.body;
-			console.log("Filename", fileName);
 
 			const spacesEndpoint = process.env.NEXT_PUBLIC_SPACE_ENDPOINT;
 			const s3 = new AWS.S3({
