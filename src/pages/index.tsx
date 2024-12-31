@@ -117,10 +117,6 @@ export default function Home() {
     <div>
       {playlistArray.length > 0 && adObject ? (
         <>
-          <span style={{color: "white", fontSize: 30, fontWeight: "bold"}}>
-            Current video index: {currentVideoIndex}/{playlistArray.length - 1}
-          </span>
-
           <video
             ref={videoRef}
             src={`/api/videos?path=${currentVideoSrc.replace("/", "")}`}
