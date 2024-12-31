@@ -12,11 +12,26 @@ export default function Home() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState(null);  // To track error state
+  const [isInternetOk, setIsInternetOk] = useState(false);
   const videoRef = useRef(null);
 
   const handleError = (e) => {
     localStorage.setItem("playlist", JSON.stringify([]));
   };
+
+  useEffect(() => {
+    setInterval(async () => {
+      try {
+        await fetch(process.env.NEXT_PUBLIC_SERVER_URL + "/health-check", { method: "GET", mode: 'no-cors' });
+        setIsInternetOk(prev => true);
+        console.log("Internet connection established");
+      } catch(e) {
+        setIsInternetOk(prev => false);
+        console.log("Lost internet connection");
+      }
+
+    }, 5000);
+  }, []);
 
   async function fetchDataFromServer()  {
     try {
@@ -59,6 +74,7 @@ export default function Home() {
   //init playlist
   useEffect(() => {
     const init = async () : Promise<void> => {
+      console.log("initialize");
       try {
         if (typeof window !== "undefined") {
           let playlist = getPlaylistFromLocalStorage();
@@ -80,7 +96,7 @@ export default function Home() {
     }
 
     init();
-  }, []);
+  }, [isInternetOk]);
 
   useEffect(() => {
     if (videoRef.current) {

@@ -22,8 +22,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 	const fileSize = stat.size;
 	const range = req.headers.range;
 
-	console.log("range", range);
-
 	if (range) {
 		const parts = range.replace(/bytes=/, '').split('-');
 		const start = parseInt(parts[0], 10);
