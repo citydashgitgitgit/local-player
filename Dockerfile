@@ -14,7 +14,7 @@ WORKDIR /app
 ENV NODE_ENV development
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY next.config.mjs .
+COPY next.config.ts .
 COPY package.json .
 COPY src ./src
 COPY public ./public
