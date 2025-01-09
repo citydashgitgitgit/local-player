@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  nextjs:
+    image: your-registry/local-player:tag
+    container_name: local-player
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Map container port 3000 to host port 3000
+    env_file:
+      - .env # Load environment variables from an external file
+    volumes:
+      - ./videos:/app/public/dev # Optional: Mount public directory for static assets
