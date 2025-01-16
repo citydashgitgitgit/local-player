@@ -142,10 +142,10 @@ export default function Home() {
             }}
           />
           <video
-            src={'/yellow_background.mov'}
+            src={'/0116.mp4'}
             style={{
-              width: `${1}px`,
-              height: `${1}px`,
+              width: `${100}px`,
+              height: `${100}px`,
               position: 'absolute',
               top: 0,
               left: 0,
