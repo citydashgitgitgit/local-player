@@ -144,8 +144,8 @@ export default function Home() {
           <video
             src={'/yellow_background.mov'}
             style={{
-              width: `${adObject?.specs?.screen?.width || 100}px`,
-              height: `${adObject?.specs?.screen?.height || 100}px`,
+              width: `${1}px`,
+              height: `${1}px`,
               position: 'absolute',
               top: 0,
               left: 0,
