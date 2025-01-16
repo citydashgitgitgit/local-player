@@ -116,7 +116,7 @@ export default function Home() {
   return (
     <div>
       {playlistArray.length > 0 && adObject ? (
-        <div style={{ position: "relative", top: 0, left: 0 }}>
+        <>
           <video
             ref={videoRef}
             src={`/api/videos?path=${currentVideoSrc.replace("/", "")}`}
@@ -124,12 +124,8 @@ export default function Home() {
             muted
             onError={handleError}
             style={{
-              position: "absolute",
               width: `${adObject?.specs?.screen?.width}px`,
               height: `${adObject?.specs?.screen?.height}px`,
-              top: 0,
-              left: 0,
-              zIndex: 2,
             }}
             loop={playlistArray.length === 1}
             onEnded={() => {
@@ -141,19 +137,7 @@ export default function Home() {
               )
             }}
           />
-          <video
-            src={'/0116.mp4'}
-            style={{
-              width: `${100}px`,
-              height: `${100}px`,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              zIndex: 5,
-            }}
-            loop={true}
-          />
-        </div>
+        </>
       ) : (
         <p>Loading playlist and board size from server...</p>
       )}
