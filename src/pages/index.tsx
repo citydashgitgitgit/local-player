@@ -142,14 +142,14 @@ export default function Home() {
             }}
           />
           <video
-            src={'/black_background.mov'}
+            src={'/yellow_background.mov'}
             style={{
               width: `${adObject?.specs?.screen?.width || 100}px`,
               height: `${adObject?.specs?.screen?.height || 100}px`,
               position: 'absolute',
               top: 0,
               left: 0,
-              zIndex: 0,
+              zIndex: 5,
             }}
             loop={true}
           />
