@@ -76,18 +76,33 @@ const replacePlaylist = async (newFilePaths: string[]) => {
         const currentPlayingVideoId = statusResponse.data.currentplid;
         const oldPlaylist = playlistResponse.data.children[0].children;
         const currentlyPlayingVideoIndex = oldPlaylist.findIndex(video => video.id == currentPlayingVideoId);
+        const currentlyPlayingVideoDuration = oldPlaylist[currentlyPlayingVideoIndex].duration;
 
         oldPlaylist.splice(currentlyPlayingVideoIndex, 1);
 
         for (const item of oldPlaylist) {
-            if (item.id !== currentPlayingVideoId) {
-                console.log("wont delete currently playing video", item.id);
+            await axios.get(`${VLC_HOST}/requests/status.json`, {
+                auth,
+                params: { command: 'pl_delete', id: item.id },
+            });
+        }
+
+        const intervalId = setInterval(async () => {
+            const [statusResponse, playlistResponse] = await Promise.all([
+                axios.get(`${VLC_HOST}/requests/status.json`, { auth }),
+                axios.get(`${VLC_HOST}/requests/playlist.json`, { auth }),
+            ]);
+
+            const playingVideoId = statusResponse.data.currentplid;
+
+            if (currentPlayingVideoId !== playingVideoId) {
+                clearInterval(intervalId);
                 await axios.get(`${VLC_HOST}/requests/status.json`, {
                     auth,
-                    params: { command: 'pl_delete', id: item.id },
+                    params: { command: 'pl_delete', id: currentPlayingVideoId },
                 });
             }
-        }
+        }, 5000);
 
         for (const filePath of newFilePaths) {
             await axios.get(`${VLC_HOST}/requests/status.json`, {
@@ -152,10 +167,10 @@ const playVideosInLoop = async (filePaths: string[]) => {
 
 const playlistsEqual = async () => {
     const localPlaylist = JSON.parse(fs.readFileSync("playlist.json", "utf8") || "[]");
-    console.log("playlist local", localPlaylist);
+    console.log("playlist local", localPlaylist.length);
     const response = await axios.get("http://localhost:3000/api/getDrumContent", { headers: { "Range": "bytes=0-500000" } });
     const { playlist } = response.data;
-    console.log("playlist from server", playlist);
+    console.log("playlist from server", playlist.length);
     let isEqual = true;
 
     if (playlist.length !== localPlaylist.length) isEqual = false;
