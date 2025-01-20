@@ -4,6 +4,7 @@ import fs from "fs";
 import AWS from "aws-sdk";
 import path from "path";
 import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
+const appRoot = require('app-root-path');
 
 const playerContentFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER || "./player_content";
 
@@ -108,9 +109,9 @@ async function checkCurrentPlaylist({ playlist }) {
 
 	let baseFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	//@ts-ignore
-	baseFolder = baseFolder.replace("./public", "");
+	baseFolder = baseFolder.replace(".", "");
 
-	return playlistContentFiles.map(file => `${baseFolder}/${file.userUuid}${file.fileName}`);
+	return playlistContentFiles.map(file => `${appRoot.path}${baseFolder}/${file.userUuid}${file.fileName}`);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -134,7 +135,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			adObject = response.data.adObject;
 			fs.writeFileSync("playlist.json", JSON.stringify(playlist));
 			fs.writeFileSync("adObject.json", JSON.stringify(response.data.adObject));
-
 			res.send({ adObject, playlist });
 		} catch (error) {
 			console.log("couldn't receive data from citydash server. Trying to read from local files");
