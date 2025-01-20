@@ -141,15 +141,6 @@ const playVideosInLoop = async (filePaths: string[]) => {
 
         // Ensure VLC has started playing before sending the full-screen command
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds
-
-        // Set VLC to fullscreen after video starts playing
-        await axios.get(`${VLC_HOST}/requests/status.json`, {
-            auth,
-            params: { command: 'fullscreen', fullscreen: 1 },
-        });
-
-        // Enable looping
-        await enableLooping();
         await disableOSD();
 
         console.log('VLC is now in full-screen mode.');
@@ -189,7 +180,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "GET") {
         const initialVideos = JSON.parse(fs.readFileSync("playlist.json", "utf8"));
         await playVideosInLoop(initialVideos);
-        res.send("playlist started");
+        // res.send("playlist started");
         setInterval(() => {
             playlistsEqual();
         }, 1000 * 30);
