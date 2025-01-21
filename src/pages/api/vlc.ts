@@ -184,8 +184,11 @@ const playlistsEqual = async () => {
     console.log("is equal", isEqual);
 
     if (!isEqual) {
-        await replacePlaylist(playlist);
-        console.log("playlist replaced with new one");
+        console.log("Detected difference in playlists. Playlist will be replaced after 30 seconds, to ensure that new files downloaded.");
+        setTimeout(async () => {
+            await replacePlaylist(playlist);
+            console.log("playlist replaced with new one");
+        }, 30 * 1000);
     } else {
         console.log("playlists are equal, wont change anything");
     }
