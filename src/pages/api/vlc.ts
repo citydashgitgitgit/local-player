@@ -76,7 +76,6 @@ const replacePlaylist = async (newFilePaths: string[]) => {
         const currentPlayingVideoId = statusResponse.data.currentplid;
         const oldPlaylist = playlistResponse.data.children[0].children;
         const currentlyPlayingVideoIndex = oldPlaylist.findIndex(video => video.id == currentPlayingVideoId);
-        const currentlyPlayingVideoDuration = oldPlaylist[currentlyPlayingVideoIndex].duration;
 
         oldPlaylist.splice(currentlyPlayingVideoIndex, 1);
 
