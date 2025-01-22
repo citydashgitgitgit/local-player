@@ -133,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			console.log("received data from citydash server. Sending to player.");
 			playlist = await checkCurrentPlaylist(response.data);
 			adObject = response.data.adObject;
-			fs.writeFileSync("playlist.json", JSON.stringify(playlist));
+
 			fs.writeFileSync("adObject.json", JSON.stringify(response.data.adObject));
 			res.send({ adObject, playlist });
 		} catch (error) {

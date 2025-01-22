@@ -4,6 +4,7 @@ import axios from 'axios';
 import cors from 'cors';
 import fs from "fs";
 import type {NextApiRequest, NextApiResponse} from "next";
+const MP4Box = require('mp4box');
 const app = express();
 
 
@@ -61,6 +62,45 @@ const enableLooping = async () => {
         console.error('Error enabling looping:', error.message);
     }
 };
+
+async function isFileDownloaded(filePath: string) {
+    return await new Promise((resolve, reject) => {
+        // Read the video file
+        const fileData = fs.readFileSync(filePath); // Returns a Node.js Buffer
+        const arrayBuffer = fileData.buffer.slice(fileData.byteOffset, fileData.byteOffset + fileData.byteLength); // Convert to ArrayBuffer
+
+        const mp4boxfile = MP4Box.createFile();
+        mp4boxfile.onReady = (info) => {
+            console.log("-------------checking file-------------");
+            const fileSize = fs.statSync(filePath).size;
+            console.log("Total file size: " + fileSize);
+
+            // Calculate the total loaded size based on buffer length
+            const loadedSize = arrayBuffer.byteLength; // Size of the loaded ArrayBuffer
+            console.log(`Loaded data size: ${loadedSize} bytes`);
+
+            if (fileSize > loadedSize) {
+                console.log("File not fully downloaded");
+                reject(false);
+            } else {
+                console.log("File fully downloaded");
+                resolve(true);
+            }
+            console.log("---------------------------------------");
+        };
+
+        // Feed the ArrayBuffer to mp4box
+        const buffer = arrayBuffer; // Use ArrayBuffer directly
+        buffer.fileStart = 0; // Set the start position
+        mp4boxfile.appendBuffer(buffer);
+        mp4boxfile.flush(); // Finalize parsing
+    })
+}
+
+async function isPlaylistDownloaded(filesPaths: string[]) {
+    const downloads = await Promise.all(filesPaths.map(file => isFileDownloaded(file)));
+    return downloads.every(downloaded => downloaded);
+}
 
 // Function to replace the playlist without interrupting current playback
 const replacePlaylist = async (newFilePaths: string[]) => {
@@ -183,11 +223,18 @@ const playlistsEqual = async () => {
     console.log("is equal", isEqual);
 
     if (!isEqual) {
-        console.log("Detected difference in playlists. Playlist will be replaced after 30 seconds, to ensure that new files downloaded.");
-        setTimeout(async () => {
+        console.log("Detected difference in playlists.");
+        if (await isPlaylistDownloaded(playlist)) {
+            console.log("New playlist is fully downloaded. Replacing playlists with new one...");
+            fs.writeFileSync("playlist.json", JSON.stringify(playlist));
             await replacePlaylist(playlist);
             console.log("playlist replaced with new one");
-        }, 30 * 1000);
+        } else {
+            console.log("New playlist was not fully downloaded. Won't replace playlist. Will try again in 5 seconds.");
+            setTimeout(async () => {
+                await playlistsEqual();
+            }, 5 * 1000);
+        }
     } else {
         console.log("playlists are equal, wont change anything");
     }
