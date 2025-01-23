@@ -10,4 +10,5 @@ export const enum MESSAGE_TYPES {
 export const writeLog = (type: MESSAGE_TYPES, message: string) : void => {
 	// const text = `[${moment().format("DD/MM/YYYY HH:mm:ss")}] ${type}: ${message} \n`;
 	// fs.appendFileSync(LOG_FILE_PATH, text);
+	console.log(message);
 }
