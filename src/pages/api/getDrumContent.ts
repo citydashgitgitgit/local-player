@@ -82,11 +82,20 @@ async function downloadNecessaryFiles(necessaryFileNames: { userUuid: string, fi
 	const asyncDownloads = [];
 
 	necessaryFileNames.forEach(file => {
-		fs.stat(`${playerContentFolder}/${file.userUuid}${file.fileName}`, (err, stats) => {
-			if (err?.code === "ENOENT") {
-				asyncDownloads.push(downloadContent(`${file.userUuid}${file.fileName}`));
-			}
-		})
+		const filePath = `${playerContentFolder}/${file.userUuid}${file.fileName}`;
+		console.log("----------");
+		console.log("checking", filePath);
+		if (!fs.existsSync(filePath)) {
+			console.log("downloading file");
+			fs.stat(`${playerContentFolder}/${file.userUuid}${file.fileName}`, (err, stats) => {
+				if (err?.code === "ENOENT") {
+					asyncDownloads.push(downloadContent(`${file.userUuid}${file.fileName}`));
+				}
+			})
+		} else {
+			console.log("file already exists, wont download");
+		}
+		console.log("----------");
 	})
 
 	return await Promise.all(asyncDownloads);
