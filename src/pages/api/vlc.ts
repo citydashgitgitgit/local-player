@@ -99,6 +99,7 @@ async function isFileDownloaded(filePath: string) {
 
 async function isPlaylistDownloaded(filesPaths: string[]) {
     const downloads = await Promise.all(filesPaths.map(file => isFileDownloaded(file)));
+    console.log("AAAAAAAAAA", downloads);
     return downloads.every(downloaded => downloaded);
 }
 
@@ -153,6 +154,14 @@ const replacePlaylist = async (newFilePaths: string[]) => {
             });
             console.log(`Added to playlist: ${filePath}`);
         }
+
+        await axios.get(`${VLC_HOST}/requests/status.json`, {
+            auth,
+            params: {
+                command: 'pl_play',
+                no_interaction: 1,  // Disable interface (no controls)
+            },
+        });
 
     } catch (error) {
         console.error("Error updating playlist dynamically:", error.message);

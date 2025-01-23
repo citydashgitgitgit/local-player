@@ -116,7 +116,7 @@ async function checkCurrentPlaylist({ playlist }) {
 
 	setTimeout(() => {
 		removeUnnecessaryFiles(playlistContentFiles);
-	}, 60 * 1000 * 60 * 2);
+	}, 60 * 1000 * 60 * 6);
 
 	let baseFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	//@ts-ignore
