@@ -123,7 +123,7 @@ async function checkCurrentPlaylist({ playlist }) {
 	//@ts-ignore
 	baseFolder = baseFolder.replace(".", "");
 
-	return playlistContentFiles.map(file => `${appRoot.path}${baseFolder}/${file.userUuid}${file.fileName}`);
+	return playlistContentFiles.map(file => `${process.env.NEXT_PUBLIC_EXTERNAL_PATH}${baseFolder}/${file.userUuid}${file.fileName}`);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
