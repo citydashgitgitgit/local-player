@@ -4,6 +4,7 @@ import fs from "fs";
 import AWS from "aws-sdk";
 import path from "path";
 import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
+import {adObjectIdFilePath} from "@/pages/api/checkPlayerId";
 const appRoot = require('app-root-path');
 
 const playerContentFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER || "./player_content";
@@ -130,8 +131,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		let playlist;
 		let adObject;
 		try {
+			const adObjectUuid = fs.readFileSync(adObjectIdFilePath, "utf8");
 			const response = await axios.post(
-				process.env.NEXT_PUBLIC_SERVER_URL + "/get-drum-playlist-by-ad-object-uuid/" + process.env.NEXT_PUBLIC_AD_OBJECT_UUID,
+				process.env.NEXT_PUBLIC_SERVER_URL + "/get-drum-playlist-by-ad-object-uuid/" + adObjectUuid,
 				{ timestamp: new Date().getTime() },
 				{
 					headers: {

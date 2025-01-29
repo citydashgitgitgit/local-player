@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   webpack: (config, { isServer }) => {
     if (isServer && isFirstRun) {
+      axios.get("http://localhost:3000/api/checkPlayerId");
       axios.get("http://localhost:3000/api/vlc");
       isFirstRun = false;
     }
