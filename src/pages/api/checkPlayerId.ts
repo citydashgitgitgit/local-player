@@ -34,7 +34,7 @@ async function registerPlayer(): Promise<void> {
         browser_status: "ok"
     });
     console.log("device registered with uuid", deviceId);
-    fs.writeFileSync(playerIdFilePath, deviceId);
+    fs.writeFileSync(playerIdFilePath, deviceId.trim(), "utf-8");
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
