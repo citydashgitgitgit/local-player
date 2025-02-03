@@ -2,12 +2,17 @@ version: "3.8"
 
 services:
   nextjs:
-    image: your-registry/local-player:tag
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: local-player
+    network_mode: "host"
     restart: unless-stopped
     ports:
-      - "3000:3000" # Map container port 3000 to host port 3000
+      - "3000:3000"
     env_file:
-      - .env # Load environment variables from an external file
+      - .env
     volumes:
-      - ./videos:/app/public/dev # Optional: Mount public directory for static assets
+      - ./videos:/opt/local-player/videos
+      - /opt/local-player/node_modules
+    environment:
