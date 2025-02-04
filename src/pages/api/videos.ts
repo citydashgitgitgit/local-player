@@ -10,7 +10,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 		return;
 	}
 
-	const videoPath = path.join(process.cwd(), 'public', requestedPath.split("?")[0]);
+	const videoPath = requestedPath.split("?")[0];
 
 	if (!fs.existsSync(videoPath)) {
 		console.log("NOT FOUND", videoPath);

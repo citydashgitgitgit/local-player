@@ -14,6 +14,7 @@ function getPlayerId(): string | undefined {
 
 async function getAdObjectUuid(deviceUuid: string): Promise<string|undefined> {
     try {
+        console.log(`--- checking ${deviceUuid} ---`);
         const { data } = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URL}/device/get_link/${deviceUuid.trim()}`);
         const adObjectUuid = data.url?.split("uuid=")[1];
         console.log("Ad object uuid from server", adObjectUuid);

@@ -9,11 +9,27 @@ export default function Home() {
   const [adObject, setAdObject] = useState(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0);
   const [currentVideoSrc, setCurrentVideoSrc] = useState<string>("");
+  const [nextVideoSrc, setNextVideoSrc] = useState<string>("");
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState(null);  // To track error state
   const [isInternetOk, setIsInternetOk] = useState(false);
-  const videoRef = useRef(null);
+  const firstVideoRef = useRef(null);
+  const secondVideoRef = useRef(null);
+
+  const [currentVideoElementIndex, setCurrentVideoElementIndex] = useState<number>(0);
+
+  useEffect(() => {
+    if (currentVideoElementIndex === 0) {
+      setCurrentVideoElementIndex(1);
+      secondVideoRef.current?.play();
+      firstVideoRef.current?.pause();
+    } else {
+      setCurrentVideoElementIndex(0);
+      firstVideoRef.current?.play();
+      secondVideoRef.current?.pause();
+    }
+  }, [currentVideoIndex]);
 
   const handleError = (e) => {
     localStorage.setItem("playlist", JSON.stringify([]));
@@ -103,8 +119,8 @@ export default function Home() {
   }, [isInternetOk]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      const video = videoRef.current;
+    if (firstVideoRef.current) {
+      const video = firstVideoRef.current;
       video.addEventListener('error', handleError);
 
       return () => {
@@ -113,19 +129,35 @@ export default function Home() {
     }
   }, []);
 
+  function onButtonPress() {
+    if (firstVideoRef.current?.paused) {
+      firstVideoRef.current.play();
+    } else {
+      firstVideoRef.current.pause();
+    }
+  }
+
+  useEffect(() => {
+
+  }, [currentVideoIndex]);
+
   return (
     <div>
+      <button onClick={onButtonPress}>stop/play</button>
       {playlistArray.length > 0 && adObject ? (
         <>
+          <h2>Current - {currentVideoSrc}</h2>
+          <h2>Next - {nextVideoSrc}</h2>
           <video
-            ref={videoRef}
-            src={`/api/videos?path=${currentVideoSrc.replace("/", "")}`}
+            ref={firstVideoRef}
+            src={`/api/videos?path=${currentVideoElementIndex === 0 ? currentVideoSrc : nextVideoSrc}`}
             autoPlay
             muted
             onError={handleError}
             style={{
               width: `${adObject?.specs?.screen?.width}px`,
               height: `${adObject?.specs?.screen?.height}px`,
+              display: currentVideoElementIndex === 0 ? "block" : "none",
             }}
             loop={playlistArray.length === 1}
             onEnded={() => {
@@ -133,9 +165,33 @@ export default function Home() {
                 playlistArray,
                 currentVideoIndex,
                 setCurrentVideoIndex,
-                setCurrentVideoSrc
+                setCurrentVideoSrc,
+                setNextVideoSrc
               )
             }}
+          />
+          <video
+              ref={secondVideoRef}
+              src={`/api/videos?path=${currentVideoElementIndex === 1 ? currentVideoSrc : nextVideoSrc}`}
+              autoPlay
+              muted
+              onError={handleError}
+              style={{
+                width: `${adObject?.specs?.screen?.width}px`,
+                height: `${adObject?.specs?.screen?.height}px`,
+                border: "1px solid red",
+                display: currentVideoElementIndex === 1 ? "block" : "none",
+              }}
+              loop={playlistArray.length === 1}
+              onEnded={() => {
+                onVideoEnd(
+                    playlistArray,
+                    currentVideoIndex,
+                    setCurrentVideoIndex,
+                    setCurrentVideoSrc,
+                    setNextVideoSrc
+                )
+              }}
           />
         </>
       ) : (
