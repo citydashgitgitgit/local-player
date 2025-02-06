@@ -214,7 +214,7 @@ const playVideosInLoop = async (filePaths: string[]) => {
 };
 
 const playlistsEqual = async () => {
-    const localPlaylist = JSON.parse(fs.readFileSync("playlist.json", "utf8") || "[]");
+    const localPlaylist = JSON.parse(fs.readFileSync("board_meta/playlist.json", "utf8") || "[]");
     console.log("playlist local", localPlaylist.length);
     const response = await axios.get("http://localhost:3000/api/getDrumContent", { headers: { "Range": "bytes=0-500000" } });
     const { playlist } = response.data;
@@ -235,7 +235,7 @@ const playlistsEqual = async () => {
         console.log("Detected difference in playlists.");
         if (await isPlaylistDownloaded(playlist)) {
             console.log("New playlist is fully downloaded. Replacing playlists with new one...");
-            fs.writeFileSync("playlist.json", JSON.stringify(playlist));
+            fs.writeFileSync("board_meta/playlist.json", JSON.stringify(playlist));
             await replacePlaylist(playlist);
             console.log("playlist replaced with new one");
         } else {
@@ -251,7 +251,7 @@ const playlistsEqual = async () => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "GET") {
-        const initialVideos = JSON.parse(fs.readFileSync("playlist.json", "utf8"));
+        const initialVideos = JSON.parse(fs.readFileSync("board_meta/playlist.json", "utf8"));
         await playVideosInLoop(initialVideos);
         // res.send("playlist started");
         setInterval(() => {

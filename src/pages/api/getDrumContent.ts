@@ -147,12 +147,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			playlist = await checkCurrentPlaylist(response.data);
 			adObject = response.data.adObject;
 
-			fs.writeFileSync("adObject.json", JSON.stringify(response.data.adObject));
+			fs.writeFileSync("adObject/adObject.json", JSON.stringify(response.data.adObject));
 			res.send({ adObject, playlist });
 		} catch (error) {
 			console.log("couldn't receive data from citydash server. Trying to read from local files");
-			playlist = JSON.parse(fs.readFileSync("playlist.json", "utf8") || "[]");
-			adObject = JSON.parse(fs.readFileSync("adObject.json", "utf8") || "{}");
+			playlist = JSON.parse(fs.readFileSync("board_meta/playlist.json", "utf8") || "[]");
+			adObject = JSON.parse(fs.readFileSync("board_meta/adObject.json", "utf8") || "{}");
 
 			res.send({ adObject, playlist });
 		}

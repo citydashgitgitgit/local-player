@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import appRoot from 'app-root-path';
 import axios from "axios";
 
-const playerIdFilePath: string = `${appRoot.path}/id.txt`;
-export const adObjectIdFilePath: string = `${appRoot.path}/adObjectUuid.txt`;
+const playerIdFilePath: string = `${appRoot.path}/board_meta/id.txt`;
+export const adObjectIdFilePath: string = `${appRoot.path}/board_meta/adObjectUuid.txt`;
 
 function getPlayerId(): string | undefined {
     if (!fs.existsSync(playerIdFilePath)) return;
