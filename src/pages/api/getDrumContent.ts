@@ -147,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			playlist = await checkCurrentPlaylist(response.data);
 			adObject = response.data.adObject;
 
-			fs.writeFileSync("adObject/adObject.json", JSON.stringify(response.data.adObject));
+			fs.writeFileSync("./board_meta/adObject.json", JSON.stringify(response.data.adObject));
 			res.send({ adObject, playlist });
 		} catch (error) {
 			console.log("couldn't receive data from citydash server. Trying to read from local files");
