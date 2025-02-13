@@ -117,7 +117,7 @@ async function checkCurrentPlaylist({ playlist }) {
 
 	setTimeout(() => {
 		removeUnnecessaryFiles(playlistContentFiles);
-	}, 60 * 1000 * 60 * 6);
+	}, 60 * 1000);
 
 	let baseFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	//@ts-ignore
@@ -147,10 +147,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			playlist = await checkCurrentPlaylist(response.data);
 			adObject = response.data.adObject;
 
-			fs.writeFileSync("./board_meta/adObject.json", JSON.stringify(response.data.adObject));
+			// fs.writeFileSync("./board_meta/adObject.json", JSON.stringify(response.data.adObject));
 			res.send({ adObject, playlist });
 		} catch (error) {
 			console.log("couldn't receive data from citydash server. Trying to read from local files");
+			console.log("error", error);
 			playlist = JSON.parse(fs.readFileSync("board_meta/playlist.json", "utf8") || "[]");
 			adObject = JSON.parse(fs.readFileSync("board_meta/adObject.json", "utf8") || "{}");
 
