@@ -4,6 +4,7 @@ import axios from 'axios';
 import cors from 'cors';
 import fs from "fs";
 import type {NextApiRequest, NextApiResponse} from "next";
+import {removeUnnecessaryFiles} from "@/pages/api/getDrumContent";
 const MP4Box = require('mp4box');
 const app = express();
 
@@ -264,5 +265,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.log("interval for checking playlists equal");
             playlistsEqual();
         }, 1000 * 60 * 2);
+
+        setInterval(() => {
+            removeUnnecessaryFiles();
+        }, 60 * 1000 * 60); // 1 hour
     }
 }

@@ -50,7 +50,7 @@ async function downloadContent(fileName: string) {
 	}
 }
 
-function removeUnnecessaryFiles(necessaryFiles: { userUuid: string, fileName: string }[]) {
+export function removeUnnecessaryFiles() {
 	const pathToCheck = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	const itemsInFolder = fs.readdirSync(pathToCheck);
 	const fileNames = [];
@@ -65,10 +65,12 @@ function removeUnnecessaryFiles(necessaryFiles: { userUuid: string, fileName: st
 		}
 	}
 
-	const necessaryFileNames = necessaryFiles.map(file => `${pathToCheck}/${file.userUuid}${file.fileName}`);
+	const necessaryFileNames = JSON.parse(fs.readFileSync("./board_meta/playlist.json").toString() || "[]");
 
+	console.log("Removing unnecessary files...");
+	console.log("Necessary files are", necessaryFileNames);
 	for (const fileName of fileNames) {
-		if (!necessaryFileNames.includes(fileName)){
+		if (!necessaryFileNames.some((necessaryFileName: string) => necessaryFileName.includes(fileName.replace(".", "")))){
 			writeLog(MESSAGE_TYPES.INFO, `File ${fileName} is not necessary anymore, deleting...`);
 			fs.unlink(fileName, (err) => {
 				if (err) {
@@ -114,10 +116,6 @@ async function checkCurrentPlaylist({ playlist }) {
 	}
 
 	await downloadNecessaryFiles(playlistContentFiles);
-
-	setTimeout(() => {
-		removeUnnecessaryFiles(playlistContentFiles);
-	}, 60 * 1000 * 60);
 
 	let baseFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	//@ts-ignore
