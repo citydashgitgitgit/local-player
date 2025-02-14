@@ -64,7 +64,7 @@ const enableLooping = async () => {
 };
 
 async function isFileDownloaded(filePath: string) {
-    return await new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         // Read the video file
         const fileData = fs.readFileSync(filePath); // Returns a Node.js Buffer
         const arrayBuffer = fileData.buffer.slice(fileData.byteOffset, fileData.byteOffset + fileData.byteLength); // Convert to ArrayBuffer
@@ -89,6 +89,11 @@ async function isFileDownloaded(filePath: string) {
             console.log("---------------------------------------");
         };
 
+        mp4boxfile.onError = (err) => {
+            console.error(`--------------error checking file ${filePath}---------------`);
+            console.error(err);
+        }
+
         // Feed the ArrayBuffer to mp4box
         const buffer = arrayBuffer; // Use ArrayBuffer directly
         buffer.fileStart = 0; // Set the start position
@@ -98,8 +103,8 @@ async function isFileDownloaded(filePath: string) {
 }
 
 async function isPlaylistDownloaded(filesPaths: string[]) {
+    console.log(`Beginning to check ${filesPaths.length} files`);
     const downloads = await Promise.all(filesPaths.map(file => isFileDownloaded(file)));
-    console.log("AAAAAAAAAA", downloads);
     return downloads.every(downloaded => downloaded);
 }
 
@@ -233,7 +238,8 @@ const playlistsEqual = async () => {
 
     if (!isEqual) {
         console.log("Detected difference in playlists.");
-        if (await isPlaylistDownloaded(playlist)) {
+        const isFullyDownloaded = await isPlaylistDownloaded(playlist)
+        if (isFullyDownloaded) {
             console.log("New playlist is fully downloaded. Replacing playlists with new one...");
             fs.writeFileSync("board_meta/playlist.json", JSON.stringify(playlist));
             await replacePlaylist(playlist);
@@ -255,7 +261,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await playVideosInLoop(initialVideos);
         // res.send("playlist started");
         setInterval(() => {
+            console.log("interval for checking playlists equal");
             playlistsEqual();
-        }, 1000 * 30);
+        }, 1000 * 60 * 2);
     }
 }
