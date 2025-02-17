@@ -264,7 +264,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         setInterval(() => {
             console.log("interval for checking playlists equal");
             playlistsEqual();
-        }, 1000 * 60 * 2);
+        }, 1000 * 60 * 4);
 
         setInterval(() => {
             removeUnnecessaryFiles();
