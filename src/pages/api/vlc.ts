@@ -5,7 +5,8 @@ import cors from 'cors';
 import fs from "fs";
 import type {NextApiRequest, NextApiResponse} from "next";
 import {removeUnnecessaryFiles} from "@/pages/api/getDrumContent";
-const MP4Box = require('mp4box');
+import { promises as fsPromises } from 'fs';
+// import MP4Box from 'mp4box';
 const app = express();
 
 app.use(cors());
@@ -67,48 +68,78 @@ const enableLooping = async () => {
 };
 
 async function isFileDownloaded(filePath: string) {
-    return new Promise((resolve, reject) => {
-        // Read the video file
-        const fileData = fs.readFileSync(filePath); // Returns a Node.js Buffer
-        const arrayBuffer = fileData.buffer.slice(fileData.byteOffset, fileData.byteOffset + fileData.byteLength); // Convert to ArrayBuffer
+    try {
+        // Get file stats asynchronously
+        const stats = await fsPromises.stat(filePath);
+        const fileSize = stats.size;
 
-        const mp4boxfile = MP4Box.createFile();
-        mp4boxfile.onReady = (info) => {
-            console.log("-------------checking file-------------");
-            const fileSize = fs.statSync(filePath).size;
-            console.log("Total file size: " + fileSize);
+        // Read only the first chunk of the file to check headers
+        const CHUNK_SIZE = 8192; // 8KB is usually enough for MP4 headers
+        const fileHandle = await fsPromises.open(filePath, 'r');
+        const { buffer } = await fileHandle.read({
+            buffer: Buffer.alloc(CHUNK_SIZE),
+            offset: 0,
+            length: CHUNK_SIZE,
+            position: 0
+        });
+        await fileHandle.close();
 
-            // Calculate the total loaded size based on buffer length
-            const loadedSize = arrayBuffer.byteLength; // Size of the loaded ArrayBuffer
-            console.log(`Loaded data size: ${loadedSize} bytes`);
-
-            if (fileSize > loadedSize) {
-                console.log("File not fully downloaded");
-                reject(false);
-            } else {
-                console.log("File fully downloaded");
-                resolve(true);
-            }
-            console.log("---------------------------------------");
-        };
-
-        mp4boxfile.onError = (err) => {
-            console.error(`--------------error checking file ${filePath}---------------`);
-            console.error(err);
+        // Quick validation of MP4 header
+        if (buffer.length < 8) {
+            return false;
         }
 
-        // Feed the ArrayBuffer to mp4box
-        const buffer = arrayBuffer; // Use ArrayBuffer directly
-        buffer.fileStart = 0; // Set the start position
-        mp4boxfile.appendBuffer(buffer);
-        mp4boxfile.flush(); // Finalize parsing
-    })
+        // Check for common MP4 signatures
+        const signature = buffer.toString('hex', 4, 8);
+        const validSignatures = ['66747970', '6d6f6f76', '6d646174']; // ftypmoov, mdat
+        if (!validSignatures.includes(signature)) {
+            return false;
+        }
+
+        // For additional validation, you can check the last chunk if needed
+        if (fileSize > CHUNK_SIZE) {
+            const lastChunkSize = Math.min(CHUNK_SIZE, fileSize % CHUNK_SIZE || CHUNK_SIZE);
+            const lastFileHandle = await fsPromises.open(filePath, 'r');
+            const { buffer: lastBuffer } = await lastFileHandle.read({
+                buffer: Buffer.alloc(lastChunkSize),
+                offset: 0,
+                length: lastChunkSize,
+                position: fileSize - lastChunkSize
+            });
+            await lastFileHandle.close();
+
+            // Check if the last chunk contains valid MP4 data
+            if (lastBuffer.length !== lastChunkSize) {
+                return false;
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error(`Error checking file ${filePath}:`, error);
+        return false;
+    }
 }
 
 async function isPlaylistDownloaded(filesPaths: string[]) {
     console.log(`Beginning to check ${filesPaths.length} files`);
-    const downloads = await Promise.all(filesPaths.map(file => isFileDownloaded(file)));
-    return downloads.every(downloaded => downloaded);
+
+    // Process files in batches to avoid overwhelming the system
+    const BATCH_SIZE = 5;
+    const results: boolean[] = [];
+
+    for (let i = 0; i < filesPaths.length; i += BATCH_SIZE) {
+        const batch = filesPaths.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(batch.map(file => isFileDownloaded(file)));
+        results.push(...batchResults);
+
+        // Early exit if we find a file that's not downloaded
+        if (batchResults.some(result => !result)) {
+            return false;
+        }
+    }
+
+    return results.every(downloaded => downloaded);
 }
 
 // Function to replace the playlist without interrupting current playback
