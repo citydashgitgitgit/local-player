@@ -8,8 +8,10 @@ import {removeUnnecessaryFiles} from "@/pages/api/getDrumContent";
 const MP4Box = require('mp4box');
 const app = express();
 
-
 app.use(cors());
+
+const PLAYLIST_COMPARE_INTERVAL_IN_MINUTES = process.env.NEXT_PUBLIC_PLAYLIST_COMPARE_INTERVAL_IN_MINUTES || 4;
+const REMOVE_UNUSED_VIDEOS_INTERVAL_IN_MINUTES = process.env.NEXT_PUBLIC_REMOVE_UNUSED_VIDEOS_INTERVAL_IN_MINUTES || 60;
 
 // VLC configuration
 const VLC_HOST = 'http://127.0.0.1:8080';
@@ -264,10 +266,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         setInterval(() => {
             console.log("interval for checking playlists equal");
             playlistsEqual();
-        }, 1000 * 60 * 4);
+        }, 1000 * 60 * PLAYLIST_COMPARE_INTERVAL_IN_MINUTES);
 
         setInterval(() => {
             removeUnnecessaryFiles();
-        }, 60 * 1000 * 60); // 1 hour
+        }, 60 * 1000 * REMOVE_UNUSED_VIDEOS_INTERVAL_IN_MINUTES); // 1 hour
     }
 }
