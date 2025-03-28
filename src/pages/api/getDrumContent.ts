@@ -6,8 +6,12 @@ import path from "path";
 import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
 import {adObjectIdFilePath} from "@/pages/api/checkPlayerId";
 const appRoot = require('app-root-path');
+import { createHash } from 'crypto';
 
 const playerContentFolder = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER || "./player_content";
+
+// Кэш текущих загрузок
+const downloadInProgress: { [key: string]: Promise<boolean> } = {};
 
 async function downloadContent(fileName: string) {
 	writeLog(MESSAGE_TYPES.INFO, `File ${fileName} is downloading locally...`);
@@ -50,6 +54,81 @@ async function downloadContent(fileName: string) {
 	}
 }
 
+async function downloadContentWithResume(fileName: string) {
+	const spacesEndpoint = process.env.NEXT_PUBLIC_SPACE_ENDPOINT;
+	const s3 = new AWS.S3({
+		endpoint: spacesEndpoint,
+		accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+		secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+	});
+
+	const params = {
+		Bucket: process.env.NEXT_PUBLIC_AWS_BUCKET_NAME,
+		Key: "dev/" + fileName,
+	};
+
+	const savePath = path.resolve(playerContentFolder, fileName);
+	const tempPath = `${savePath}.download`;
+	const folderForFile = path.dirname(savePath);
+
+	// Создаем папку, если она не существует
+	if (!fs.existsSync(folderForFile)) {
+		fs.mkdirSync(folderForFile, { recursive: true });
+	}
+
+	return new Promise(async (resolve, reject) => {
+		try {
+			// Получаем информацию о файле в S3
+			const headData = await s3.headObject(params).promise();
+			const fileSize = headData.ContentLength;
+
+			// Проверяем существующий файл
+			let downloadedBytes = 0;
+			if (fs.existsSync(tempPath)) {
+				const stats = fs.statSync(tempPath);
+				downloadedBytes = stats.size;
+			}
+
+			// Если файл уже полностью скачан, просто переименовываем
+			if (downloadedBytes === fileSize) {
+				fs.renameSync(tempPath, savePath);
+				resolve(true);
+				return;
+			}
+
+			// Настройка параметров загрузки с возобновлением
+			const downloadParams = {
+				...params,
+				Range: `bytes=${downloadedBytes}-`
+			};
+
+			// Создаем поток для дозагрузки
+			const writeStream = fs.createWriteStream(tempPath, { flags: 'a' });
+
+			const downloadStream = s3.getObject(downloadParams).createReadStream();
+
+			downloadStream.on('data', (chunk) => {
+				writeStream.write(chunk);
+			});
+
+			downloadStream.on('end', () => {
+				writeStream.end();
+				// Переименовываем временный файл в финальный
+				fs.renameSync(tempPath, savePath);
+				resolve(true);
+			});
+
+			downloadStream.on('error', (err) => {
+				writeStream.end();
+				reject(new Error(`Download error: ${err.message}`));
+			});
+
+		} catch (error) {
+			reject(new Error(`Preparation error: ${error.message}`));
+		}
+	});
+}
+
 export function removeUnnecessaryFiles() {
 	const pathToCheck = process.env.NEXT_PUBLIC_PLAYER_CONTENT_FOLDER;
 	const itemsInFolder = fs.readdirSync(pathToCheck);
@@ -82,26 +161,47 @@ export function removeUnnecessaryFiles() {
 }
 
 async function downloadNecessaryFiles(necessaryFileNames: { userUuid: string, fileName: string }[]) {
-	const asyncDownloads = [];
+	const asyncDownloads: Promise<boolean>[] = [];
 
-	necessaryFileNames.forEach(file => {
-		const filePath = `${playerContentFolder}/${file.userUuid}${file.fileName}`;
-		console.log("----------");
-		console.log("checking", filePath);
+	for (const file of necessaryFileNames) {
+		const fullFileName = `${file.userUuid}${file.fileName}`;
+		const filePath = path.resolve(playerContentFolder, fullFileName);
+
+		// Создаем уникальный ключ для файла
+		const fileKey = createHash('md5').update(fullFileName).digest('hex');
+
+		// Проверяем существование файла
 		if (!fs.existsSync(filePath)) {
-			console.log("downloading file");
-			fs.stat(`${playerContentFolder}/${file.userUuid}${file.fileName}`, (err, stats) => {
-				if (err?.code === "ENOENT") {
-					asyncDownloads.push(downloadContent(`${file.userUuid}${file.fileName}`));
-				}
-			})
-		} else {
-			console.log("file already exists, wont download");
-		}
-		console.log("----------");
-	})
+			// Если загрузка этого файла еще не идет
+			if (!downloadInProgress[fileKey]) {
+				console.log(`Downloading file: ${fullFileName}`);
 
-	return await Promise.all(asyncDownloads);
+				// Создаем обещание загрузки и кэшируем его
+				const downloadPromise = downloadContentWithResume(fullFileName)
+					.then(result => {
+						// Удаляем запись о загрузке после завершения
+						delete downloadInProgress[fileKey];
+						return result;
+					})
+					.catch(error => {
+						// Удаляем запись о загрузке в случае ошибки
+						delete downloadInProgress[fileKey];
+						throw error;
+					});
+
+				downloadInProgress[fileKey] = downloadPromise;
+				asyncDownloads.push(downloadPromise);
+			} else {
+				console.log(`Download already in progress for: ${fullFileName}`);
+				// Если загрузка уже идет, добавляем существующее обещание
+				asyncDownloads.push(downloadInProgress[fileKey]);
+			}
+		} else {
+			console.log(`File already exists: ${fullFileName}`);
+		}
+	}
+
+	return Promise.all(asyncDownloads);
 }
 
 async function checkCurrentPlaylist({ playlist }) {
