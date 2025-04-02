@@ -4,7 +4,7 @@ import fs from "fs";
 import AWS from "aws-sdk";
 import path from "path";
 import {MESSAGE_TYPES, writeLog} from "@/scripts/logger";
-import {adObjectIdFilePath} from "@/pages/api/checkPlayerId";
+import {adObjectIdFilePath, deviceIdFilePath, playlistFilePath} from "@/pages/api/checkPlayerId";
 const appRoot = require('app-root-path');
 import { createHash } from 'crypto';
 
@@ -229,10 +229,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		let playlist;
 		let adObject;
 		try {
+			const localPlaylist = JSON.parse(fs.readFileSync(playlistFilePath, "utf8") || "[]");
 			const adObjectUuid = fs.readFileSync(adObjectIdFilePath, "utf8");
+			const deviceUuid = fs.readFileSync(deviceIdFilePath, "utf8");
 			const response = await axios.post(
 				process.env.NEXT_PUBLIC_SERVER_URL + "/get-drum-playlist-by-ad-object-uuid/" + adObjectUuid,
-				{ timestamp: new Date().getTime() },
+				{
+					timestamp: new Date().getTime(),
+					playlist: localPlaylist,
+					deviceUuid,
+				},
 				{
 					headers: {
 						"Content-Type": "application/json",

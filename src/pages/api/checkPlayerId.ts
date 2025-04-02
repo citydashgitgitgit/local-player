@@ -6,6 +6,8 @@ import axios from "axios";
 
 const playerIdFilePath: string = `${appRoot.path}/board_meta/id.txt`;
 export const adObjectIdFilePath: string = `${appRoot.path}/board_meta/adObjectUuid.txt`;
+export const playlistFilePath: string = `${appRoot.path}/board_meta/playlist.json`;
+export const deviceIdFilePath: string = `${appRoot.path}/board_meta/id.txt`;
 
 function getPlayerId(): string | undefined {
     if (!fs.existsSync(playerIdFilePath)) return;
